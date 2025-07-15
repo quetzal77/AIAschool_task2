@@ -32,7 +32,16 @@ class RAGPipeline:
         query_embedding = self.retriever.encode(query, convert_to_tensor=False)
         distances, indices = self.index.search(query_embedding.reshape(1, -1), top_k)
         retrieved_docs = [self.web_page_content[idx] for idx in indices[0]]
-        return retrieved_docs
+
+        # Deduplicate the documents
+        unique_docs = []
+        seen = set()
+        for doc in retrieved_docs:
+            if doc not in seen:
+                unique_docs.append(doc)
+                seen.add(doc)
+
+        return unique_docs[:top_k]
 
     @staticmethod
     def generate(query, retrieved_docs):
